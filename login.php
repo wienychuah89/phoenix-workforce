@@ -1,4 +1,5 @@
 <?php
+//Completed
 // 开启 Session 记录登录状态
 session_start();
 include 'cnopen.php';
