@@ -13,27 +13,27 @@
     $action   = isset($_POST['action']) ? $_POST['action'] : '';
 	//echo 'action : ' .$action.'<br/>';
 	
-	if ($action==="SAVE_DEPT"){
+	if ($action==="SAVE_POST"){
 		$currentUser = htmlspecialchars($_SESSION['username'] ?? 'SYSTEM'); 
 		date_default_timezone_set('Asia/Kuala_Lumpur');
 		// 直接用 date() 函数，传入格式字符串
 		$currentDate = date('Y-m-d H:i:s');
 
 		$editRow  = trim($_POST['hiderow'] ?? '');
-		$editCode = trim($_POST['hiddeptcode' . $editRow] ?? '');
-		$editName  = trim($_POST['deptname' . $editRow] ?? '');
-        $editDesc  = trim($_POST['deptdesc' . $editRow] ?? '');
+		$editCode = trim($_POST['hidpostcode' . $editRow] ?? '');
+		$editName  = trim($_POST['postname' . $editRow] ?? '');
+        $editDesc  = trim($_POST['postdesc' . $editRow] ?? '');
         $updateData = [
-			':pdeptcode'  => $editCode,
-			':pdeptname'   => $editName,
-			':pdeptdesc'  => $editDesc,
-			':pdeptupdate'=> $currentDate
+			':ppostcode'  => $editCode,
+			':ppostname'   => $editName,
+			':ppostdesc'  => $editDesc,
+			':ppostupdate'=> $currentDate
 		];
 		try {
 			// 1. Prepare the SQL statement with SET clause and WHERE clause
-			$sql = "UPDATE pdepart 
-					SET deptname = :pdeptname, deptdesc = :pdeptdesc, deptupdate = :pdeptupdate
-					WHERE deptcode = :pdeptcode";
+			$sql = "UPDATE pposition 
+					SET postname = :ppostname, postdesc = :ppostdesc, postupdate = :ppostupdate
+					WHERE postcode = :ppostcode";
 			$stmt = $pdo->prepare($sql);
 
 			// 2. Execute by passing the data array
@@ -41,15 +41,15 @@
 
 			// 3. Check how many rows were actually changed
 			$rowCount = $stmt->rowCount();
-			$msg = "Successfully update department detail row(s): " .$editRow. " : " . $editCode. " -" .$editName; 
+			$msg = "Successfully update position detail row(s): " .$editRow. " : " . $editCode. " -" .$editName; 
 			
 			saveLog(
 				$pdo,
 				$currentUser, 
 				'UPDATE', 
-				'pdepart', 
+				'pposition', 
 				$editCode, 
-				"Updated department code " . $editCode. " - " .$editName
+				"Updated position code " . $editCode. " - " .$editName
 			);
 		} catch (PDOException $e) {
 			$msg = "Update failed: " . $e->getMessage();
@@ -57,7 +57,7 @@
 		$action="";
 		$hiderow = "";
 	}
-    if ($action === 'ADD_DEPT') {
+    if ($action === 'ADD_POST') {
         $newCode  = trim($_POST['txtNewCode'] ?? '');
 		$newName   = trim($_POST['txtNewName'] ?? '');
         $newDesc  = trim($_POST['txtNewDesc'] ?? '');
@@ -70,48 +70,48 @@
         if (!empty($newCode) && !empty($newName)) {
             try {
                 // 检查 ID 是否已存在
-                $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM pdepart WHERE deptcode = :id");
+                $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM pposition WHERE postcode = :id");
                 $checkStmt->execute([':id' => $newCode]);
                 
                 if ($checkStmt->fetchColumn() > 0) {
                     //no action if id already existing!
                 } else {
                     // 插入 psalarycate 表
-                    $sql = "INSERT INTO pdepart 
-                            (deptcode, deptname, deptdesc, deptupdate) 
+                    $sql = "INSERT INTO pposition 
+                            (postcode, postname, postdesc, postupdate) 
                             VALUES 
-                            (:pdeptcode, :pdeptname, :pdeptdesc, :pdeptupdate)";
+                            (:ppostcode, :ppostname, :ppostdesc, :ppostupdate)";
 
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([
-                        ':pdeptcode'     => $newCode,
-                        ':pdeptname'   => $newName,
-						':pdeptdesc'   => $newDesc,
-                        ':pdeptupdate'   => $currentDate
+                        ':ppostcode'     => $newCode,
+                        ':ppostname'   => $newName,
+						':ppostdesc'   => $newDesc,
+                        ':ppostupdate'   => $currentDate
                     ]);
                     saveLog(
 						$pdo,
 						$currentUser, 
 						'INSERT', 
-						'pdepart', 
+						'pposition', 
 						$newCode, 
-						"Add new deparment[pdepart] " . $newCode . $newName
+						"Add new position[pposition] " . $newCode . $newName
 					);
-					$msg = "Successfully add new department ". $newCode. " - " .$newName; 
+					$msg = "Successfully add new position ". $newCode. " - " .$newName; 
                 }
             } catch (PDOException $e) {
-                $msg = "Save New Department Failed: " . $e->getMessage();
+                $msg = "Save New Position Failed: " . $e->getMessage();
             }
         } else {
             $msg = "Please Column Code, Name To Proceed.";
         }
     }
-	$department = $pdo->query("SELECT deptid, deptcode, deptname, deptdesc, deptupdate FROM pdepart order by deptcode;")->fetchAll(PDO::FETCH_ASSOC);
+	$position = $pdo->query("SELECT postid, postcode, postname, postdesc, postupdate FROM pposition order by postcode;")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <div class="container my-1">
     <div class="text-center text-danger fw-bold mb-2"><?php echo $msg; ?></div>
 	<div class="container bg-white p-3 rounded shadow-sm">
-	    <h6 class="mb-2 fw-bold">Department Setup</h6>
+	    <h6 class="mb-2 fw-bold">Position Setup</h6>
 		<form id="mainForm" method="POST" action="">
 		    <input type="hidden" name="action" id="form-action" value="">
 			<!-- 1. NEW: Quick Search Box -->
@@ -119,32 +119,32 @@
                 <div class="card-body bg-light rounded">
                     <div class="row align-items-center">
                         <div class="col-md-3">
-                            <span class="fw-bold text-secondary">Find Department:</span>
+                            <span class="fw-bold text-secondary">Find Position:</span>
                         </div>
                         <div class="col-md-9">
                             <div class="input-group">
-                                <input type="text" id="search-dept" class="form-control" placeholder="Type Department Code/Name and press Enter..." onkeypress="handleSearchKeyPress(event)">
-                                <button type="button" class="btn btn-outline-primary" onclick="searchDepartment()">Search</button>
+                                <input type="text" id="search-post" class="form-control" placeholder="Type Position Code/Name and press Enter..." onkeypress="handleSearchKeyPress(event)">
+                                <button type="button" class="btn btn-outline-primary" onclick="searchPosition()">Search</button>
                             </div>
-                            <div id="search-error" class="text-danger small mt-1 d-none">Department not found!</div>
+                            <div id="search-error" class="text-danger small mt-1 d-none">Position not found!</div>
                         </div>
                     </div>
                 </div>
             </div>
 			<!-- 核心：用 PHP 循环把所有部门数据渲染成隐藏的 HTML 元素，供 JS 搜索 -->
-			<div id="dept-data-container" style="display: none;">
-				<?php foreach ($department as $dept): ?>
-					<div class="dept-item" 
-						 data-id="<?php echo htmlspecialchars($dept['deptid']); ?>"
-						 data-code="<?php echo htmlspecialchars(trim($dept['deptcode'])); ?>"
-						 data-name="<?php echo htmlspecialchars(trim($dept['deptname'])); ?>"
-						 data-desc="<?php echo htmlspecialchars($dept['deptdesc']); ?>"
-						 data-update="<?php echo htmlspecialchars($dept['deptupdate']); ?>">
+			<div id="post-data-container" style="display: none;">
+				<?php foreach ($position as $post): ?>
+					<div class="post-item" 
+						 data-id="<?php echo htmlspecialchars($dept['postid']); ?>"
+						 data-code="<?php echo htmlspecialchars(trim($dept['postcode'])); ?>"
+						 data-name="<?php echo htmlspecialchars(trim($dept['postname'])); ?>"
+						 data-desc="<?php echo htmlspecialchars($dept['postdesc']); ?>"
+						 data-update="<?php echo htmlspecialchars($dept['postupdate']); ?>">
 					</div>
 				<?php endforeach; ?>
 			</div>
 
-			<table class="table table-bordered table-hover align-middle" id="departmentTable">
+			<table class="table table-bordered table-hover align-middle" id="positionTable">
 			    <thead class="table-light">
                     <tr>
                         <th style="width: 4%;">NO.</th>
@@ -155,51 +155,51 @@
                     </tr>
                 </thead>
 				<tbody>
-				    <?php $cntDept = 1; ?>
-					<?php foreach ($department as $index => $dept) { ?>
+				    <?php $cntPost = 1; ?>
+					<?php foreach ($position as $index => $post) { ?>
 				    <tr>
-						<td class="row-no"><?php echo $cntDept; ?></td>  
+						<td class="row-no"><?php echo $cntPost; ?></td>  
 						<td>
 							<input type="text" 
-							   id="deptcode<?php echo $cntDept; ?>" 
-							   name="deptcode<?php echo $cntDept; ?>" 
+							   id="postcode<?php echo $cntPost; ?>" 
+							   name="postcode<?php echo $cntPost; ?>" 
 							   class="form-control edit-mode col-code" 
-							   value="<?php echo htmlspecialchars($dept['deptcode']); ?>" 
+							   value="<?php echo htmlspecialchars($post['postcode']); ?>" 
 							   disabled>
 						</td>
 						
-						<input type="hidden" id="hiddeptcode<?php echo $cntDept; ?>" name="hiddeptcode<?php echo $cntDept; ?>" value="<?php echo htmlspecialchars($dept['deptcode']); ?>" >
+						<input type="hidden" id="hidpostcode<?php echo $cntPost; ?>" name="hidpostcode<?php echo $cntPost; ?>" value="<?php echo htmlspecialchars($post['postcode']); ?>" >
 						
 						<td>
 							<input type="text" 
-							   id="deptname<?php echo $cntDept; ?>" 
-							   name="deptname<?php echo $cntDept; ?>" 
+							   id="postname<?php echo $cntPost; ?>" 
+							   name="postname<?php echo $cntPost; ?>" 
 							   class="form-control edit-mode col-desc" 
-							   value="<?php echo htmlspecialchars($dept['deptname']); ?>" 
+							   value="<?php echo htmlspecialchars($post['postname']); ?>" 
 							   disabled>
 						</td>
 							   
 						<td>
 							<input type="text" 
-							   id="deptdesc<?php echo $cntDept; ?>" 
-							   name="deptdesc<?php echo $cntDept; ?>" 
+							   id="postdesc<?php echo $cntPost; ?>" 
+							   name="postdesc<?php echo $cntPost; ?>" 
 							   class="form-control edit-mode col-desc" 
-							   value="<?php echo htmlspecialchars($dept['deptdesc']); ?>" 
+							   value="<?php echo htmlspecialchars($post['postdesc']); ?>" 
 							   disabled>
 						</td>
 						<td>
-							<button type="button" class="btn btn-sm btn-primary btn-edit view-mode" id="deptedit_<?php echo $cntDept; ?>" name="deptedit_<?php echo $cntDept; ?>">EDIT</button>
-							<button type="button" class="btn btn-sm btn-success btn-save edit-mode d-none" id="deptsave_<?php echo $cntDept; ?>" name="deptsave_<?php echo $cntDept; ?>">SAVE</button>
-							<button type="button" class="btn btn-sm btn-danger btn-abort edit-mode d-none" id="deptabort_<?php echo $cntDept; ?>" name="deptabort_<?php echo $cntDept; ?>">ABORT</button>
+							<button type="button" class="btn btn-sm btn-primary btn-edit view-mode" id="postedit_<?php echo $cntPost; ?>" name="postedit_<?php echo $cntPost; ?>">EDIT</button>
+							<button type="button" class="btn btn-sm btn-success btn-save edit-mode d-none" id="postsave_<?php echo $cntPost; ?>" name="postsave_<?php echo $cntPost; ?>">SAVE</button>
+							<button type="button" class="btn btn-sm btn-danger btn-abort edit-mode d-none" id="postabort_<?php echo $cntPost; ?>" name="postabort_<?php echo $cntPost; ?>">ABORT</button>
 						</td>
 					
 					</tr>
 					<?php
-                        $cntDept++; 
+                        $cntPost++; 
                     } ?>
 				</tbody>
 			</table>
-			<input type="hidden" name="hidrow" id="hidrow" value="<?php echo $cntDept - 1; ?>"> 
+			<input type="hidden" name="hidrow" id="hidrow" value="<?php echo $cntPost - 1; ?>"> 
 			<input type="hidden" name="hiderow" id="hiderow" value="<?php echo $hiderow;?>"> 
             <div class="d-flex justify-content-end mt-3">
                 <button type="button" class="btn btn-primary" id="btnAdd" name="btnAdd">ADD NEW</button>
@@ -208,7 +208,7 @@
 	</div>
 </div>
 <script>
-const tableBody = document.querySelector('#departmentTable tbody');
+const tableBody = document.querySelector('#positionTable tbody');
 const btnAdd = document.getElementById('btnAdd');
 const formAction = document.getElementById('form-action');
 // 2. 表格内部事件代理（只处理 EDIT, SAVE, ABORT）
@@ -223,14 +223,14 @@ tableBody.addEventListener('click', function(e) {
 		//row.querySelectorAll('input, select').forEach(input => {
             //input.disabled = false;
         //});
-		document.getElementById('deptname'+rowIndex).disabled = false;
-		document.getElementById('deptdesc'+rowIndex).disabled = false;
+		document.getElementById('postname'+rowIndex).disabled = false;
+		document.getElementById('postdesc'+rowIndex).disabled = false;
         toggleAllEditButtons(true);         // 隐藏所有的 EDIT 按钮
         toggleRowSaveButton(row, false);     // 显示当前行的 SAVE 按钮
         toggleRowAbortButton(row, false);   // 显示当前行的 ABORT 按钮
 
         if (btnAdd) btnAdd.disabled = true;
-        if (formAction) formAction.value = 'update_department';
+        if (formAction) formAction.value = 'update_position';
         return; 
     }	
 	// --- 处理 SAVE 按钮 ---
@@ -248,7 +248,7 @@ tableBody.addEventListener('click', function(e) {
         //});
 
         if (btnAdd) btnAdd.disabled = false;
-        if (formAction) formAction.value = 'SAVE_DEPT';
+        if (formAction) formAction.value = 'SAVE_POST';
 		const mainForm = document.getElementById('mainForm');
 		if (mainForm) {
 			// 1. Submit the form first while elements are still ENABLED
@@ -326,7 +326,7 @@ if (btnAdd) {
             }
 
             // 2. 赋值 form-action 操作标示
-            if (formAction) formAction.value = 'ADD_DEPT';
+            if (formAction) formAction.value = 'ADD_POST';
 
             // 3. 提交表单
             const mainForm = document.getElementById('mainForm');
@@ -382,23 +382,21 @@ function toggleRowAbortButton(row, hide) {
         }
     }
 }
-// 处理 Enter 键按下事件
-// 处理 Enter 键按下
-// 处理 Enter 键按下
+
 function handleSearchKeyPress(event) {
     if (event.key === 'Enter') {
         event.preventDefault();
-        searchDepartment();
+        searchPosition();
     }
 }
 
-window.searchDepartment = function(forcedValue = null) {
-    const searchInput = document.getElementById('search-dept');
+window.searchPosition = function(forcedValue = null) {
+    const searchInput = document.getElementById('search-post');
     const searchVal = (forcedValue ? forcedValue : searchInput.value).trim().toLowerCase();
     const errorDiv = document.getElementById('search-error');
     
     // 1. 直接获取表格主体（tbody）里的所有行
-    const tableBody = document.querySelector('#departmentTable tbody');
+    const tableBody = document.querySelector('#positionTable tbody');
     if (!tableBody) return;
     const rows = tableBody.querySelectorAll('tr');
     
@@ -423,11 +421,11 @@ window.searchDepartment = function(forcedValue = null) {
         const nameInput = row.querySelector('.col-desc') || row.querySelector('td:nth-child(3) input');
 
         // 安全地获取输入框内的真实文本值
-        const deptCode = codeInput ? codeInput.value.trim().toLowerCase() : '';
-        const deptName = nameInput ? nameInput.value.trim().toLowerCase() : '';
+        const postcode = codeInput ? codeInput.value.trim().toLowerCase() : '';
+        const postname = nameInput ? nameInput.value.trim().toLowerCase() : '';
 
         // 核心匹配逻辑：Code 刚好相等，或者 Name 里面包含了输入的关键词
-        if (deptCode === searchVal || deptName.includes(searchVal)) {
+        if (postcode === searchVal || postname.includes(searchVal)) {
             row.classList.remove('d-none'); // 找到了就显示这行
             matchCount++;
         } else {
