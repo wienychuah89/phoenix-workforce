@@ -12,22 +12,23 @@
     $action   = isset($_POST['action']) ? $_POST['action'] : '';
 	//echo 'action : ' .$action.'<br/>';
 	
-	
 	if ($action==="SAVE_DEPT"){
 		$currentUser = htmlspecialchars($_SESSION['username'] ?? 'SYSTEM'); 
         $currentDate = date('Y-m-d H:i:s');
 		$editRow  = trim($_POST['hiderow'] ?? '');
 		$editCode = trim($_POST['hiddeptcode' . $editRow] ?? '');
+		$editName  = trim($_POST['deptname' . $editRow] ?? '');
         $editDesc  = trim($_POST['deptdesc' . $editRow] ?? '');
         $updateData = [
 			':pdeptcode'  => $editCode,
-			':pdeptnme'   => $editDesc,
+			':pdeptname'   => $editName,
+			':pdeptdesc'  => $editDesc,
 			':pdeptupdate'=> $currentDate
 		];
 		try {
 			// 1. Prepare the SQL statement with SET clause and WHERE clause
 			$sql = "UPDATE pdepart 
-					SET deptname = :pdeptnme, deptupdate = :pdeptupdate
+					SET deptname = :pdeptname, deptdesc = :pdeptdesc, deptupdate = :pdeptupdate
 					WHERE deptcode = :pdeptcode";
 			$stmt = $pdo->prepare($sql);
 
@@ -36,7 +37,7 @@
 
 			// 3. Check how many rows were actually changed
 			$rowCount = $stmt->rowCount();
-			$msg = "Successfully update department detail " .$editRow. " row(s): " . $editCode. " -" .$editDesc; 
+			$msg = "Successfully update department detail " .$editRow. " row(s): " . $editCode. " -" .$editName; 
 			
 			saveLog(
 				$pdo,
@@ -44,7 +45,7 @@
 				'UPDATE', 
 				'pdepart', 
 				$editCode, 
-				"Updated department code " . $editCode. " - " .$editDesc
+				"Updated department code " . $editCode. " - " .$editName
 			);
 		} catch (PDOException $e) {
 			$msg = "Update failed: " . $e->getMessage();
@@ -54,12 +55,13 @@
 	}
     if ($action === 'ADD_DEPT') {
         $newCode  = trim($_POST['txtNewCode'] ?? '');
+		$newName   = trim($_POST['txtNewName'] ?? '');
         $newDesc  = trim($_POST['txtNewDesc'] ?? '');
         // 安全获取用户名
         $currentUser = htmlspecialchars($_SESSION['username'] ?? 'SYSTEM'); 
         $currentDate = date('Y-m-d H:i:s');
 
-        if (!empty($newCode) && !empty($newDesc)) {
+        if (!empty($newCode) && !empty($newName)) {
             try {
                 // 检查 ID 是否已存在
                 $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM pdepart WHERE deptcode = :id");
@@ -70,14 +72,15 @@
                 } else {
                     // 插入 psalarycate 表
                     $sql = "INSERT INTO pdepart 
-                            (deptcode, deptname, deptupdate) 
+                            (deptcode, deptname, deptdesc, deptupdate) 
                             VALUES 
-                            (:pdeptcode, :pdeptnme, :pdeptupdate)";
+                            (:pdeptcode, :pdeptname, :pdeptdesc, :pdeptupdate)";
 
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([
                         ':pdeptcode'     => $newCode,
-                        ':pdeptnme'   => $newDesc,
+                        ':pdeptname'   => $newName,
+						':pdeptdesc'   => $newDesc,
                         ':pdeptupdate'   => $currentDate
                     ]);
                     saveLog(
@@ -86,18 +89,18 @@
 						'INSERT', 
 						'pdepart', 
 						$newCode, 
-						"Add new deparment[pdepart] " . $newCode . $newDesc
+						"Add new deparment[pdepart] " . $newCode . $newName
 					);
-					$msg = "Successfully add new department ". $newCode. " - " .$newDesc; 
+					$msg = "Successfully add new department ". $newCode. " - " .$newName; 
                 }
             } catch (PDOException $e) {
                 $msg = "Save New Department Failed: " . $e->getMessage();
             }
         } else {
-            $msg = "Please Fill All Column To Proceed.";
+            $msg = "Please Column Code, Name To Proceed.";
         }
     }
-	$department = $pdo->query("SELECT deptid, deptcode, deptname, deptupdate FROM pdepart order by deptcode;")->fetchAll(PDO::FETCH_ASSOC);
+	$department = $pdo->query("SELECT deptid, deptcode, deptname, deptdesc, deptupdate FROM pdepart order by deptcode;")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <div class="container my-1">
     <div class="text-center text-danger fw-bold mb-2"><?php echo $msg; ?></div>
@@ -108,8 +111,9 @@
 			<table class="table table-bordered table-hover align-middle" id="departmentTable">
 			    <thead class="table-light">
                     <tr>
-                        <th style="width: 6%;">NO.</th>
-                        <th style="width: 15%;">Code</th>
+                        <th style="width: 4%;">NO.</th>
+                        <th style="width: 7%;">Code</th>
+						<th style="width: 20%;">Name</th>
                         <th>Description</th>
                         <th style="width: 15%;">Action</th>
                     </tr>
@@ -129,13 +133,22 @@
 						</td>
 						
 						<input type="hidden" id="hiddeptcode<?php echo $cntDept; ?>" name="hiddeptcode<?php echo $cntDept; ?>" value="<?php echo htmlspecialchars($dept['deptcode']); ?>" >
+						
+						<td>
+							<input type="text" 
+							   id="deptname<?php echo $cntDept; ?>" 
+							   name="deptname<?php echo $cntDept; ?>" 
+							   class="form-control edit-mode col-desc" 
+							   value="<?php echo htmlspecialchars($dept['deptname']); ?>" 
+							   disabled>
+						</td>
 							   
 						<td>
 							<input type="text" 
 							   id="deptdesc<?php echo $cntDept; ?>" 
 							   name="deptdesc<?php echo $cntDept; ?>" 
 							   class="form-control edit-mode col-desc" 
-							   value="<?php echo htmlspecialchars($dept['deptname']); ?>" 
+							   value="<?php echo htmlspecialchars($dept['deptdesc']); ?>" 
 							   disabled>
 						</td>
 						<td>
@@ -174,6 +187,7 @@ tableBody.addEventListener('click', function(e) {
 		//row.querySelectorAll('input, select').forEach(input => {
             //input.disabled = false;
         //});
+		document.getElementById('deptname'+rowIndex).disabled = false;
 		document.getElementById('deptdesc'+rowIndex).disabled = false;
         toggleAllEditButtons(true);         // 隐藏所有的 EDIT 按钮
         toggleRowSaveButton(row, false);     // 显示当前行的 SAVE 按钮
@@ -248,7 +262,8 @@ if (btnAdd) {
         newRow.innerHTML = `
             <td class="row-no"></td>
             <td><input type="text" class="form-control edit-mode col-code" placeholder="Enter Code" id="txtNewCode" name="txtNewCode" required></td>
-            <td><input type="text" class="form-control edit-mode col-desc" placeholder="Enter Description" id="txtNewDesc" name="txtNewDesc" required></td>
+			<td><input type="text" class="form-control edit-mode col-name" placeholder="Enter Name" id="txtNewName" name="txtNewName" required></td>
+            <td><input type="text" class="form-control edit-mode col-desc" placeholder="Enter Description" id="txtNewDesc" name="txtNewDesc"></td>
 			<td>
                 <button type="button" class="btn btn-sm btn-success" id="btnNewSave">SAVE</button>
                 <button type="button" class="btn btn-sm btn-danger" id="btnNewAbort">ABORT</button>
@@ -263,13 +278,14 @@ if (btnAdd) {
 
         // --- 绑定新增行的 SAVE 按钮事件 ---
         document.getElementById('btnNewSave').addEventListener('click', function() {
-            const nameVal = document.getElementById('txtNewCode').value.trim();
+            const codeVal = document.getElementById('txtNewCode').value.trim();
+			const nameVal = document.getElementById('txtNewName').value.trim();
             const descVal = document.getElementById('txtNewDesc').value.trim();
 			
 
             // 1. 必填项前端验证
-            if (!nameVal || !descVal) {
-                alert("Please Fill Column（Code and Description）！");
+            if (!nameVal || !codeVal) {
+                alert("Please Fill Column（Code and Name）！");
                 return;
             }
 
