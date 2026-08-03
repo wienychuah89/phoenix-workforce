@@ -17,8 +17,8 @@
 		date_default_timezone_set('Asia/Kuala_Lumpur');
 		$currentDate = date('Y-m-d H:i:s');
 		$editRow  = trim($_POST['hiderow'] ?? '');
-		$editCode = trim($_POST['hidpostcode' . $editRow] ?? '');
-		$editStts = trim($_POST['hidpoststts' . $editRow] ?? '');
+		$editCode = trim($_POST['hidbankcode' . $editRow] ?? '');
+		$editStts = trim($_POST['hidbankstts' . $editRow] ?? '');
 			
 		if ($editStts==="Y"){
 			$updateStts = "N";
@@ -26,15 +26,15 @@
 			$updateStts = "Y";
 		}
 		$updateData = [
-			':ppostcode'  => $editCode,
-			':ppoststts'   => $updateStts,
-			':ppostupdate'=> $currentDate
+			':pbankcode'  => $editCode,
+			':pbankstts'   => $updateStts,
+			':pbankupdate'=> $currentDate
 		];
 		try {
 			// 1. Prepare the SQL statement with SET clause and WHERE clause
-			$sql = "UPDATE pposition 
-					SET poststts = :ppoststts, postupdate = :ppostupdate
-					WHERE postcode = :ppostcode";
+			$sql = "UPDATE pbank 
+					SET bankstts = :pbankstts, bankupdate = :pbankupdate
+					WHERE bankcode = :pbankcode";
 			$stmt = $pdo->prepare($sql);
 
 			// 2. Execute by passing the data array
@@ -42,15 +42,15 @@
 
 			// 3. Check how many rows were actually changed
 			$rowCount = $stmt->rowCount();
-			$msg = "Successfully toggle position status of " .$editCode. " to " . $updateStts; 
+			$msg = "Successfully toggle bank status of " .$editCode. " to " . $updateStts; 
 			
 			saveLog(
 				$pdo,
 				$currentUser, 
 				'UPDATE', 
-				'pposition', 
+				'pbank', 
 				$editCode, 
-				"Toggle position code " . $editCode. " to " .$updateStts
+				"Toggle bank code " . $editCode. " to " .$updateStts
 			);
 		} catch (PDOException $e) {
 			$msg = "Toggle failed: " . $e->getMessage();
@@ -58,28 +58,27 @@
 		$action="";
 		$hiderow = "";
 	}
-	
-	if ($action==="SAVE_POST"){
+	if ($action==="SAVE_BANK"){
 		$currentUser = htmlspecialchars($_SESSION['username'] ?? 'SYSTEM'); 
 		date_default_timezone_set('Asia/Kuala_Lumpur');
 		// 直接用 date() 函数，传入格式字符串
 		$currentDate = date('Y-m-d H:i:s');
 
 		$editRow  = trim($_POST['hiderow'] ?? '');
-		$editCode = trim($_POST['hidpostcode' . $editRow] ?? '');
-		$editName  = trim($_POST['postname' . $editRow] ?? '');
-        $editDesc  = trim($_POST['postdesc' . $editRow] ?? '');
+		$editCode = trim($_POST['hidbankcode' . $editRow] ?? '');
+		$editName  = trim($_POST['bankname' . $editRow] ?? '');
+        $editDesc  = trim($_POST['bankdesc' . $editRow] ?? '');
         $updateData = [
-			':ppostcode'  => $editCode,
-			':ppostname'   => $editName,
-			':ppostdesc'  => $editDesc,
-			':ppostupdate'=> $currentDate
+			':pbankcode'  => $editCode,
+			':pbankname'   => $editName,
+			':pbankdesc'  => $editDesc,
+			':pbankupdate'=> $currentDate
 		];
 		try {
 			// 1. Prepare the SQL statement with SET clause and WHERE clause
-			$sql = "UPDATE pposition 
-					SET postname = :ppostname, postdesc = :ppostdesc, postupdate = :ppostupdate
-					WHERE postcode = :ppostcode";
+			$sql = "UPDATE pbank 
+					SET bankname = :pbankname, bankdesc = :pbankdesc, bankupdate = :pbankupdate
+					WHERE bankcode = :pbankcode";
 			$stmt = $pdo->prepare($sql);
 
 			// 2. Execute by passing the data array
@@ -87,15 +86,15 @@
 
 			// 3. Check how many rows were actually changed
 			$rowCount = $stmt->rowCount();
-			$msg = "Successfully update position detail row(s): " .$editRow. " : " . $editCode. " -" .$editName; 
+			$msg = "Successfully update bank detail row(s): " .$editRow. " : " . $editCode. " -" .$editName; 
 			
 			saveLog(
 				$pdo,
 				$currentUser, 
 				'UPDATE', 
-				'pposition', 
+				'pbank', 
 				$editCode, 
-				"Updated position code " . $editCode. " - " .$editName
+				"Updated bank code " . $editCode. " - " .$editName
 			);
 		} catch (PDOException $e) {
 			$msg = "Update failed: " . $e->getMessage();
@@ -103,7 +102,7 @@
 		$action="";
 		$hiderow = "";
 	}
-    if ($action === 'ADD_POST') {
+    if ($action === 'ADD_BANK') {
         $newCode  = trim($_POST['txtNewCode'] ?? '');
 		$newName   = trim($_POST['txtNewName'] ?? '');
         $newDesc  = trim($_POST['txtNewDesc'] ?? '');
@@ -116,48 +115,48 @@
         if (!empty($newCode) && !empty($newName)) {
             try {
                 // 检查 ID 是否已存在
-                $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM pposition WHERE postcode = :id");
+                $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM pbank WHERE bankcode = :id");
                 $checkStmt->execute([':id' => $newCode]);
                 
                 if ($checkStmt->fetchColumn() > 0) {
                     //no action if id already existing!
                 } else {
                     // 插入 psalarycate 表
-                    $sql = "INSERT INTO pposition 
-                            (postcode, postname, postdesc, postupdate) 
+                    $sql = "INSERT INTO pbank 
+                            (bankcode, bankname, bankdesc, bankupdate) 
                             VALUES 
-                            (:ppostcode, :ppostname, :ppostdesc, :ppostupdate)";
+                            (:pbankcode, :pbankname, :pbankdesc, :pbankupdate)";
 
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([
-                        ':ppostcode'     => $newCode,
-                        ':ppostname'   => $newName,
-						':ppostdesc'   => $newDesc,
-                        ':ppostupdate'   => $currentDate
+                        ':pbankcode'     => $newCode,
+                        ':pbankname'   => $newName,
+						':pbankdesc'   => $newDesc,
+                        ':pbankupdate'   => $currentDate
                     ]);
                     saveLog(
 						$pdo,
 						$currentUser, 
 						'INSERT', 
-						'pposition', 
+						'pbank', 
 						$newCode, 
-						"Add new position[pposition] " . $newCode . $newName
+						"Add new bank[pbank] " . $newCode . $newName
 					);
-					$msg = "Successfully add new position ". $newCode. " - " .$newName; 
+					$msg = "Successfully add new bank ". $newCode. " - " .$newName; 
                 }
             } catch (PDOException $e) {
-                $msg = "Save New Position Failed: " . $e->getMessage();
+                $msg = "Save New bank Failed: " . $e->getMessage();
             }
         } else {
             $msg = "Please Column Code, Name To Proceed.";
         }
     }
-	$position = $pdo->query("SELECT postid, postcode, postname, postdesc, postupdate, poststts FROM pposition order by postid;")->fetchAll(PDO::FETCH_ASSOC);
+	$bankinfo = $pdo->query("SELECT bankid, bankcode, bankname, bankdesc, bankupdate, bankstts FROM pbank order by bankid;")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <div class="container my-1">
     <div class="text-center text-danger fw-bold mb-2"><?php echo $msg; ?></div>
 	<div class="container bg-white p-3 rounded shadow-sm">
-	    <h6 class="mb-2 fw-bold">Position Setup</h6>
+	    <h6 class="mb-2 fw-bold">Bank Setup</h6>
 		<form id="mainForm" method="POST" action="">
 		    <input type="hidden" name="action" id="form-action" value="">
 			<!-- 1. NEW: Quick Search Box -->
@@ -165,33 +164,33 @@
                 <div class="card-body bg-light rounded">
                     <div class="row align-items-center">
                         <div class="col-md-3">
-                            <span class="fw-bold text-secondary">Find Position:</span>
+                            <span class="fw-bold text-secondary">Find Bank:</span>
                         </div>
                         <div class="col-md-9">
                             <div class="input-group">
-                                <input type="text" id="search-post" class="form-control" placeholder="Type Position Code/Name and press Enter..." onkeypress="handleSearchKeyPress(event)">
-                                <button type="button" class="btn btn-outline-primary" onclick="searchPosition()">Search</button>
+                                <input type="text" id="search-bank" class="form-control" placeholder="Type Bank Code/Name and press Enter..." onkeypress="handleSearchKeyPress(event)">
+                                <button type="button" class="btn btn-outline-primary" onclick="searchbank()">Search</button>
                             </div>
-                            <div id="search-error" class="text-danger small mt-1 d-none">Position not found!</div>
+                            <div id="search-error" class="text-danger small mt-1 d-none">Bank not found!</div>
                         </div>
                     </div>
                 </div>
             </div>
 			<!-- 核心：用 PHP 循环把所有部门数据渲染成隐藏的 HTML 元素，供 JS 搜索 -->
 			<div id="post-data-container" style="display: none;">
-				<?php foreach ($position as $post): ?>
+				<?php foreach ($bankinfo as $bank): ?>
 					<div class="post-item" 
-						 data-id="<?php echo htmlspecialchars($post['postid']); ?>"
-						 data-code="<?php echo htmlspecialchars(trim($post['postcode'])); ?>"
-						 data-name="<?php echo htmlspecialchars(trim($post['postname'])); ?>"
-						 data-desc="<?php echo htmlspecialchars($post['postdesc']); ?>"
-						 data-update="<?php echo htmlspecialchars($post['postupdate']); ?>"
-						 data-stts="<?php echo htmlspecialchars($post['poststts']); ?>">>
+						 data-id="<?php echo htmlspecialchars($bank['bankid']); ?>"
+						 data-code="<?php echo htmlspecialchars(trim($bank['bankcode'])); ?>"
+						 data-name="<?php echo htmlspecialchars(trim($bank['bankname'])); ?>"
+						 data-desc="<?php echo htmlspecialchars($bank['bankdesc']); ?>"
+						 data-update="<?php echo htmlspecialchars($bank['bankupdate']); ?>"
+						 data-stts="<?php echo htmlspecialchars($bank['bankstts']); ?>">
 					</div>
 				<?php endforeach; ?>
 			</div>
 
-			<table class="table table-bordered table-hover align-middle" id="positionTable">
+			<table class="table table-bordered table-hover align-middle" id="bankTable">
 			    <thead class="table-light">
                     <tr>
                         <th style="width: 4%;">NO.</th>
@@ -202,57 +201,58 @@
                     </tr>
                 </thead>
 				<tbody>
-				    <?php $cntPost = 1; ?>
-					<?php foreach ($position as $index => $post) { ?>
+				    <?php $cntBank = 1; ?>
+					<?php foreach ($bankinfo as $index => $bank) { ?>
 				    <tr>
-						<td class="row-no"><?php echo $cntPost; ?></td>  
+						<td class="row-no"><?php echo $cntBank; ?></td>  
 						<td>
 							<input type="text" 
-							   id="postcode<?php echo $cntPost; ?>" 
-							   name="postcode<?php echo $cntPost; ?>" 
-							   class="form-control edit-mode col-code <?php echo ($post['poststts'] === 'N') ? 'text-danger fw-bold' : ''; ?>" 
-							   value="<?php echo htmlspecialchars($post['postcode']); ?>" 
+							   id="bankcode<?php echo $cntBank; ?>" 
+							   name="bankcode<?php echo $cntBank; ?>" 
+							   class="form-control edit-mode col-code <?php echo ($bank['bankstts'] === 'N') ? 'text-danger fw-bold' : ''; ?>" 
+							   value="<?php echo htmlspecialchars($bank['bankcode']); ?>" 
 							   disabled>
 						</td>
 						
-						<input type="hidden" id="hidpostcode<?php echo $cntPost; ?>" name="hidpostcode<?php echo $cntPost; ?>" value="<?php echo htmlspecialchars($post['postcode']); ?>" >
-						<input type="hidden" id="hidpoststts<?php echo $cntPost; ?>" name="hidpoststts<?php echo $cntPost; ?>" value="<?php echo htmlspecialchars($post['poststts']); ?>" >
+						<input type="hidden" id="hidbankcode<?php echo $cntBank; ?>" name="hidbankcode<?php echo $cntBank; ?>" value="<?php echo htmlspecialchars($bank['bankcode']); ?>" >
+						<input type="hidden" id="hidbankstts<?php echo $cntBank; ?>" name="hidbankstts<?php echo $cntBank; ?>" value="<?php echo htmlspecialchars($bank['bankstts']); ?>" >
 						
 						<td>
 							<input type="text" 
-							   id="postname<?php echo $cntPost; ?>" 
-							   name="postname<?php echo $cntPost; ?>" 
-							   class="form-control edit-mode col-name <?php echo ($post['poststts'] === 'N') ? 'text-danger fw-bold' : ''; ?>" 
-							   value="<?php echo htmlspecialchars($post['postname']); ?>" 
+							   id="bankname<?php echo $cntBank; ?>" 
+							   name="bankname<?php echo $cntBank; ?>" 
+							   class="form-control edit-mode col-name <?php echo ($bank['bankstts'] === 'N') ? 'text-danger fw-bold' : ''; ?>" 
+							   value="<?php echo htmlspecialchars($bank['bankname']); ?>" 
 							   disabled>
 						</td>
 							   
 						<td>
 							<input type="text" 
-							   id="postdesc<?php echo $cntPost; ?>" 
-							   name="postdesc<?php echo $cntPost; ?>" 
-							   class="form-control edit-mode col-desc <?php echo ($post['poststts'] === 'N') ? 'text-danger fw-bold' : ''; ?>" 
-							   value="<?php echo htmlspecialchars($post['postdesc']); ?>" 
+							   id="bankdesc<?php echo $cntBank; ?>" 
+							   name="bankdesc<?php echo $cntBank; ?>" 
+							   class="form-control edit-mode col-desc <?php echo ($bank['bankstts'] === 'N') ? 'text-danger fw-bold' : ''; ?>" 
+							   value="<?php echo htmlspecialchars($bank['bankdesc']); ?>" 
 							   disabled>
 						</td>
 						<td>
-							<button type="button" class="btn btn-sm btn-primary btn-edit view-mode" id="postedit_<?php echo $cntPost; ?>" name="postedit_<?php echo $cntPost; ?>">EDIT</button>
-							<?php if (htmlspecialchars($post['poststts'])=="Y"){?>
-							&nbsp;<button type="button" class="btn btn-sm btn-warning btn-chg edit-mode" id="postchg_<?php echo $cntPost; ?>" name="postchg_<?php echo $cntPost; ?>">⚪ Inactive</button>
+							<button type="button" class="btn btn-sm btn-primary btn-edit view-mode" id="bankedit_<?php echo $cntBank; ?>" name="bankedit_<?php echo $cntBank; ?>">EDIT</button>
+							<?php if (htmlspecialchars($bank['bankstts'])=="Y"){?>
+							&nbsp;<button type="button" class="btn btn-sm btn-warning btn-chg edit-mode" id="bankchg_<?php echo $cntBank; ?>" name="bankchg_<?php echo $cntBank; ?>">⚪ Inactive</button>
 							<?php }else{?>
-							&nbsp;<button type="button" class="btn btn-sm btn-success btn-chg edit-mode" id="postchg_<?php echo $cntPost; ?>" name="postchg_<?php echo $cntPost; ?>">🟢 Activate</button>
+							&nbsp;<button type="button" class="btn btn-sm btn-success btn-chg edit-mode" id="bankchg_<?php echo $cntBank; ?>" name="bankchg_<?php echo $cntBank; ?>">🟢 Activate</button>
 							<?php }?>
-							<button type="button" class="btn btn-sm btn-success btn-save edit-mode d-none" id="postsave_<?php echo $cntPost; ?>" name="postsave_<?php echo $cntPost; ?>">SAVE</button>
-							<button type="button" class="btn btn-sm btn-danger btn-abort edit-mode d-none" id="postabort_<?php echo $cntPost; ?>" name="postabort_<?php echo $cntPost; ?>">ABORT</button>
+					
+							<button type="button" class="btn btn-sm btn-success btn-save edit-mode d-none" id="banksave_<?php echo $cntBank; ?>" name="banksave_<?php echo $cntBank; ?>">SAVE</button>
+							<button type="button" class="btn btn-sm btn-danger btn-abort edit-mode d-none" id="bankabort_<?php echo $cntBank; ?>" name="bankabort_<?php echo $cntBank; ?>">ABORT</button>
 						</td>
 					
 					</tr>
 					<?php
-                        $cntPost++; 
+                        $cntBank++; 
                     } ?>
 				</tbody>
 			</table>
-			<input type="hidden" name="hidrow" id="hidrow" value="<?php echo $cntPost - 1; ?>"> 
+			<input type="hidden" name="hidrow" id="hidrow" value="<?php echo $cntBank - 1; ?>"> 
 			<input type="hidden" name="hiderow" id="hiderow" value="<?php echo $hiderow;?>"> 
             <div class="d-flex justify-content-end mt-3">
                 <button type="button" class="btn btn-primary" id="btnAdd" name="btnAdd">ADD NEW</button>
@@ -261,7 +261,7 @@
 	</div>
 </div>
 <script>
-const tableBody = document.querySelector('#positionTable tbody');
+const tableBody = document.querySelector('#bankTable tbody');
 const btnAdd = document.getElementById('btnAdd');
 const formAction = document.getElementById('form-action');
 // 2. 表格内部事件代理（只处理 EDIT, SAVE, ABORT）
@@ -276,15 +276,15 @@ tableBody.addEventListener('click', function(e) {
 		//row.querySelectorAll('input, select').forEach(input => {
             //input.disabled = false;
         //});
-		document.getElementById('postname'+rowIndex).disabled = false;
-		document.getElementById('postdesc'+rowIndex).disabled = false;
+		document.getElementById('bankname'+rowIndex).disabled = false;
+		document.getElementById('bankdesc'+rowIndex).disabled = false;
         toggleAllEditButtons(true);         // 隐藏所有的 EDIT 按钮
         toggleRowSaveButton(row, false);     // 显示当前行的 SAVE 按钮
         toggleRowAbortButton(row, false);   // 显示当前行的 ABORT 按钮
 		toggleAllChgButtons(true);
 
         if (btnAdd) btnAdd.disabled = true;
-        if (formAction) formAction.value = 'update_position';
+        if (formAction) formAction.value = 'update_bank';
         return; 
     }	
 	// --- 处理 SAVE 按钮 ---
@@ -303,7 +303,7 @@ tableBody.addEventListener('click', function(e) {
         //});
 
         if (btnAdd) btnAdd.disabled = false;
-        if (formAction) formAction.value = 'SAVE_POST';
+        if (formAction) formAction.value = 'SAVE_BANK';
 		const mainForm = document.getElementById('mainForm');
 		if (mainForm) {
 			// 1. Submit the form first while elements are still ENABLED
@@ -393,8 +393,7 @@ if (btnAdd) {
 
         btnAdd.classList.add('d-none');
         toggleAllEditButtons(true); // 隐藏所有现有行的 EDIT 按钮
-		toggleAllChgButtons(true);
-
+        toggleAllChgButtons(true);
         // --- 绑定新增行的 SAVE 按钮事件 ---
         document.getElementById('btnNewSave').addEventListener('click', function() {
             const codeVal = document.getElementById('txtNewCode').value.trim();
@@ -409,7 +408,7 @@ if (btnAdd) {
             }
 
             // 2. 赋值 form-action 操作标示
-            if (formAction) formAction.value = 'ADD_POST';
+            if (formAction) formAction.value = 'ADD_BANK';
 
             // 3. 提交表单
             const mainForm = document.getElementById('mainForm');
@@ -476,17 +475,17 @@ function toggleAllChgButtons(hide) {
 function handleSearchKeyPress(event) {
     if (event.key === 'Enter') {
         event.preventDefault();
-        searchPosition();
+        searchbank();
     }
 }
 
-window.searchPosition = function(forcedValue = null) {
-    const searchInput = document.getElementById('search-post');
+window.searchbank = function(forcedValue = null) {
+    const searchInput = document.getElementById('search-bank');
     const searchVal = (forcedValue ? forcedValue : searchInput.value).trim().toLowerCase();
     const errorDiv = document.getElementById('search-error');
     
     // 1. 直接获取表格主体（tbody）里的所有行
-    const tableBody = document.querySelector('#positionTable tbody');
+    const tableBody = document.querySelector('#bankTable tbody');
     if (!tableBody) return;
     const rows = tableBody.querySelectorAll('tr');
     
@@ -511,11 +510,11 @@ window.searchPosition = function(forcedValue = null) {
         const nameInput = row.querySelector('.col-name') || row.querySelector('td:nth-child(3) input');
 
         // 安全地获取输入框内的真实文本值
-        const postcode = codeInput ? codeInput.value.trim().toLowerCase() : '';
-        const postname = nameInput ? nameInput.value.trim().toLowerCase() : '';
+        const bankcode = codeInput ? codeInput.value.trim().toLowerCase() : '';
+        const bankname = nameInput ? nameInput.value.trim().toLowerCase() : '';
 
         // 核心匹配逻辑：Code 刚好相等，或者 Name 里面包含了输入的关键词
-        if (postcode === searchVal || postname.includes(searchVal)) {
+        if (bankcode === searchVal || bankname.includes(searchVal)) {
             row.classList.remove('d-none'); // 找到了就显示这行
             matchCount++;
         } else {
@@ -530,6 +529,5 @@ window.searchPosition = function(forcedValue = null) {
         if (errorDiv) errorDiv.classList.add('d-none');
     }
 };
-
 
 </script>

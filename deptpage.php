@@ -12,7 +12,52 @@
 	$hiderow = "";
     $action   = isset($_POST['action']) ? $_POST['action'] : '';
 	//echo 'action : ' .$action.'<br/>';
-	
+	if($action==="TOGGLE_STATUS"){
+		$currentUser = htmlspecialchars($_SESSION['username'] ?? 'SYSTEM'); 
+		date_default_timezone_set('Asia/Kuala_Lumpur');
+		$currentDate = date('Y-m-d H:i:s');
+		$editRow  = trim($_POST['hiderow'] ?? '');
+		$editCode = trim($_POST['hiddeptcode' . $editRow] ?? '');
+		$editStts = trim($_POST['hiddeptstts' . $editRow] ?? '');
+			
+		if ($editStts==="Y"){
+			$updateStts = "N";
+		}else{
+			$updateStts = "Y";
+		}
+		$updateData = [
+			':pdeptcode'  => $editCode,
+			':pdeptstts'   => $updateStts,
+			':pdeptupdate'=> $currentDate
+		];
+		try {
+			// 1. Prepare the SQL statement with SET clause and WHERE clause
+			$sql = "UPDATE pdepart 
+					SET deptstts = :pdeptstts, deptupdate = :pdeptupdate
+					WHERE deptcode = :pdeptcode";
+			$stmt = $pdo->prepare($sql);
+
+			// 2. Execute by passing the data array
+			$stmt->execute($updateData);
+
+			// 3. Check how many rows were actually changed
+			$rowCount = $stmt->rowCount();
+			$msg = "Successfully toggle department status of " .$editCode. " to " . $updateStts; 
+			
+			saveLog(
+				$pdo,
+				$currentUser, 
+				'UPDATE', 
+				'pdepart', 
+				$editCode, 
+				"Toggle department code " . $editCode. " to " .$updateStts
+			);
+		} catch (PDOException $e) {
+			$msg = "Toggle failed: " . $e->getMessage();
+		}
+		$action="";
+		$hiderow = "";
+	}
 	if ($action==="SAVE_DEPT"){
 		$currentUser = htmlspecialchars($_SESSION['username'] ?? 'SYSTEM'); 
 		date_default_timezone_set('Asia/Kuala_Lumpur');
@@ -106,7 +151,7 @@
             $msg = "Please Column Code, Name To Proceed.";
         }
     }
-	$department = $pdo->query("SELECT deptid, deptcode, deptname, deptdesc, deptupdate FROM pdepart order by deptcode;")->fetchAll(PDO::FETCH_ASSOC);
+	$department = $pdo->query("SELECT deptid, deptcode, deptname, deptdesc, deptupdate, deptstts FROM pdepart order by deptcode;")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <div class="container my-1">
     <div class="text-center text-danger fw-bold mb-2"><?php echo $msg; ?></div>
@@ -139,7 +184,8 @@
 						 data-code="<?php echo htmlspecialchars(trim($dept['deptcode'])); ?>"
 						 data-name="<?php echo htmlspecialchars(trim($dept['deptname'])); ?>"
 						 data-desc="<?php echo htmlspecialchars($dept['deptdesc']); ?>"
-						 data-update="<?php echo htmlspecialchars($dept['deptupdate']); ?>">
+						 data-update="<?php echo htmlspecialchars($dept['deptupdate']); ?>"
+						 data-stts="<?php echo htmlspecialchars($dept['deptstts']); ?>">
 					</div>
 				<?php endforeach; ?>
 			</div>
@@ -163,18 +209,19 @@
 							<input type="text" 
 							   id="deptcode<?php echo $cntDept; ?>" 
 							   name="deptcode<?php echo $cntDept; ?>" 
-							   class="form-control edit-mode col-code" 
+							   class="form-control edit-mode col-code <?php echo ($dept['deptstts'] === 'N') ? 'text-danger fw-bold' : ''; ?>" 
 							   value="<?php echo htmlspecialchars($dept['deptcode']); ?>" 
 							   disabled>
 						</td>
 						
 						<input type="hidden" id="hiddeptcode<?php echo $cntDept; ?>" name="hiddeptcode<?php echo $cntDept; ?>" value="<?php echo htmlspecialchars($dept['deptcode']); ?>" >
+						<input type="hidden" id="hiddeptstts<?php echo $cntDept; ?>" name="hiddeptstts<?php echo $cntDept; ?>" value="<?php echo htmlspecialchars($dept['deptstts']); ?>" >
 						
 						<td>
 							<input type="text" 
 							   id="deptname<?php echo $cntDept; ?>" 
 							   name="deptname<?php echo $cntDept; ?>" 
-							   class="form-control edit-mode col-desc" 
+							   class="form-control edit-mode col-name <?php echo ($dept['deptstts'] === 'N') ? 'text-danger fw-bold' : ''; ?>" 
 							   value="<?php echo htmlspecialchars($dept['deptname']); ?>" 
 							   disabled>
 						</td>
@@ -183,12 +230,17 @@
 							<input type="text" 
 							   id="deptdesc<?php echo $cntDept; ?>" 
 							   name="deptdesc<?php echo $cntDept; ?>" 
-							   class="form-control edit-mode col-desc" 
+							   class="form-control edit-mode col-desc <?php echo ($dept['deptstts'] === 'N') ? 'text-danger fw-bold' : ''; ?>" 
 							   value="<?php echo htmlspecialchars($dept['deptdesc']); ?>" 
 							   disabled>
 						</td>
 						<td>
 							<button type="button" class="btn btn-sm btn-primary btn-edit view-mode" id="deptedit_<?php echo $cntDept; ?>" name="deptedit_<?php echo $cntDept; ?>">EDIT</button>
+							<?php if (htmlspecialchars($dept['deptstts'])=="Y"){?>
+							&nbsp;<button type="button" class="btn btn-sm btn-warning btn-chg edit-mode" id="bankchg_<?php echo $cntDept; ?>" name="bankchg_<?php echo $cntDept; ?>">⚪ Inactive</button>
+							<?php }else{?>
+							&nbsp;<button type="button" class="btn btn-sm btn-success btn-chg edit-mode" id="bankchg_<?php echo $cntDept; ?>" name="bankchg_<?php echo $cntDept; ?>">🟢 Activate</button>
+							<?php }?>
 							<button type="button" class="btn btn-sm btn-success btn-save edit-mode d-none" id="deptsave_<?php echo $cntDept; ?>" name="deptsave_<?php echo $cntDept; ?>">SAVE</button>
 							<button type="button" class="btn btn-sm btn-danger btn-abort edit-mode d-none" id="deptabort_<?php echo $cntDept; ?>" name="deptabort_<?php echo $cntDept; ?>">ABORT</button>
 						</td>
@@ -228,7 +280,7 @@ tableBody.addEventListener('click', function(e) {
         toggleAllEditButtons(true);         // 隐藏所有的 EDIT 按钮
         toggleRowSaveButton(row, false);     // 显示当前行的 SAVE 按钮
         toggleRowAbortButton(row, false);   // 显示当前行的 ABORT 按钮
-
+        toggleAllChgButtons(true);
         if (btnAdd) btnAdd.disabled = true;
         if (formAction) formAction.value = 'update_department';
         return; 
@@ -242,7 +294,7 @@ tableBody.addEventListener('click', function(e) {
         toggleAllEditButtons(false);        // 恢复显示所有 EDIT 按钮
         toggleRowSaveButton(row, true);     // 隐藏当前行的 SAVE 按钮
         toggleRowAbortButton(row, true);    // 隐藏当前行的 ABORT 按钮
-
+        toggleAllChgButtons(false);
         //row.querySelectorAll('input, select').forEach(input => {
             //input.disabled = true;
         //});
@@ -265,7 +317,34 @@ tableBody.addEventListener('click', function(e) {
 		} else {
 			console.error("未找到 id='mainForm' 的 <form> 标签！");
 		}
+    }
+	// --- 处理 TERMINATE/ACTIVE 按钮 ---
+    const chgBtn = e.target.closest('.btn-chg');
+    if (chgBtn) {
+        const row = chgBtn.closest('tr');
+        const rowIndex = chgBtn.id.split('_')[1];
+        document.getElementById('hiderow').value=rowIndex;
+        toggleAllEditButtons(false);        // 恢复显示所有 EDIT 按钮
+        toggleRowSaveButton(row, true);     // 隐藏当前行的 SAVE 按钮
+        toggleRowAbortButton(row, true);    // 隐藏当前行的 ABORT 按钮
+		toggleAllChgButtons(false);
 
+        if (btnAdd) btnAdd.disabled = false;
+        if (formAction) formAction.value = 'TOGGLE_STATUS';
+		const mainForm = document.getElementById('mainForm');
+		if (mainForm) {
+			// 1. Submit the form first while elements are still ENABLED
+			mainForm.submit();
+			
+			// 2. Delay disabling by 10-50ms so the browser has time to read the values
+			setTimeout(() => {
+				row.querySelectorAll('input, select').forEach(input => {
+					input.disabled = true;
+				});
+			}, 50);
+		} else {
+			console.error("未找到 id='mainForm' 的 <form> 标签！");
+		}
     }
 	// --- 处理 ABORT 按钮 ---
     const abortBtn = e.target.closest('.btn-abort');
@@ -275,7 +354,7 @@ tableBody.addEventListener('click', function(e) {
         toggleAllEditButtons(false);        // 恢复显示所有 EDIT 按钮
         toggleRowSaveButton(row, true);     // 隐藏当前行的 SAVE 按钮
         toggleRowAbortButton(row, true);    // 隐藏当前行的 ABORT 按钮
-
+        toggleAllChgButtons(false);
         row.querySelectorAll('input, select').forEach(input => {
             input.disabled = true;
         });
@@ -311,6 +390,7 @@ if (btnAdd) {
 
         btnAdd.classList.add('d-none');
         toggleAllEditButtons(true); // 隐藏所有现有行的 EDIT 按钮
+		toggleAllChgButtons(true);
 
         // --- 绑定新增行的 SAVE 按钮事件 ---
         document.getElementById('btnNewSave').addEventListener('click', function() {
@@ -343,6 +423,7 @@ if (btnAdd) {
             updateRowNumbers();           // 2. 重新更新序号
             btnAdd.classList.remove('d-none'); // 3. 恢复显示 ADD 按钮
             toggleAllEditButtons(false);  // 4. 重新显示所有的 EDIT 按钮
+			toggleAllChgButtons(false);
             if (formAction) formAction.value = '';
         });
     });
@@ -382,9 +463,13 @@ function toggleRowAbortButton(row, hide) {
         }
     }
 }
-// 处理 Enter 键按下事件
-// 处理 Enter 键按下
-// 处理 Enter 键按下
+function toggleAllChgButtons(hide) {
+    const chgButtons = tableBody.querySelectorAll('.btn-chg');
+    chgButtons.forEach(btn => {
+        btn.style.display = hide ? 'none' : '';
+    });
+}
+
 function handleSearchKeyPress(event) {
     if (event.key === 'Enter') {
         event.preventDefault();
@@ -420,7 +505,7 @@ window.searchDepartment = function(forcedValue = null) {
     rows.forEach(row => {
         // 通过 class 或是 input 的相对位置找到 Code 和 Name 的输入框
         const codeInput = row.querySelector('.col-code') || row.querySelector('td:nth-child(2) input');
-        const nameInput = row.querySelector('.col-desc') || row.querySelector('td:nth-child(3) input');
+        const nameInput = row.querySelector('.col-name') || row.querySelector('td:nth-child(3) input');
 
         // 安全地获取输入框内的真实文本值
         const deptCode = codeInput ? codeInput.value.trim().toLowerCase() : '';
@@ -442,17 +527,4 @@ window.searchDepartment = function(forcedValue = null) {
         if (errorDiv) errorDiv.classList.add('d-none');
     }
 };
-
-
-function fillDepartmentForm(element) {
-    // 提取刚才在 PHP 绑定的所有 data 属性
-    const id = element.getAttribute('data-id');
-    const code = element.getAttribute('data-code');
-    const name = element.getAttribute('data-name');
-    const desc = element.getAttribute('data-desc');
-
-    // 举例：把数据塞进你页面上的其他输入框
-    // document.getElementById('input-dept-id').value = id;
-    // document.getElementById('input-dept-name').value = name;
-}
 </script>
