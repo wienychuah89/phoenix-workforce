@@ -16,6 +16,7 @@ Build a simple, practical and affordable workforce solution for SMEs and manufac
 - Bootstrap 5
 - MySQL
 - ESP32 RFID
+- Python (run mock code)
 
 ## Planned Modules
 
