@@ -22,7 +22,7 @@ Build a simple, practical and affordable workforce solution for SMEs and manufac
 👥 Human Resource
 ✅ Employee Management 
 ✅ RFID Attendance
-- Calcue working hour from RFID data
+- Calculate working hour from RFID data
 - Shift Management
 - Payroll
 - Leave
