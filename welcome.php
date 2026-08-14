@@ -11,8 +11,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 $current_page = $_GET['page'] ?? 'home';
 ?>
 
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>

@@ -4,7 +4,6 @@
 		header('Location: login.php');
 		exit;
 	}
-
     include 'cnopen.php';
 	include 'function.php';
 	$action   = isset($_POST['action']) ? $_POST['action'] : '';
