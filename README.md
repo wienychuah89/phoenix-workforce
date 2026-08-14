@@ -19,15 +19,27 @@ Build a simple, practical and affordable workforce solution for SMEs and manufac
 - Python (run mock code)
 
 ## Planned Modules
-
-- Employee Management
-- RFID Attendance
+👥 Human Resource
+✅ Employee Management 
+✅ RFID Attendance
+- Calculate working hour from RFID data
 - Shift Management
 - Payroll
 - Leave
 - Claims
 - Dashboard
 - AI Assistant
+
+🚚 Purchasing
+✅ Supplier Management
+- Purchase Order
+- Goods Receive Note
+- GRN Confirmation Stock In
+
+📊 Sales
+- Sales Order
+- Pick List
+- Delivery Order
 
 ## Author
 
