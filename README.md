@@ -20,6 +20,7 @@ Build a simple, practical and affordable workforce solution for SMEs and manufac
 
 ## Planned Modules
 👥 Human Resource
+
 ✅ Employee Management 
 ✅ RFID Attendance
 - Calculate working hour from RFID data
@@ -31,12 +32,14 @@ Build a simple, practical and affordable workforce solution for SMEs and manufac
 - AI Assistant
 
 🚚 Purchasing
+
 ✅ Supplier Management
 - Purchase Order
 - Goods Receive Note
 - GRN Confirmation Stock In
 
 📊 Sales
+
 - Sales Order
 - Pick List
 - Delivery Order
