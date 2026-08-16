@@ -570,22 +570,14 @@
 											<i class="bi bi-plus-circle"></i> ➕ Add Item 
 										</button>
 									</div>
+									<hr class="border-primary">
+									<div class="d-flex justify-content-end align-items-center my-2">
+										<label for="gtotal" class="fw-bold me-2">Grand Total:</label>
+										<input type="number" step="0.01" min="0" class="form-control form-control-sm text-end w-auto bg-secondary  text-white fw-bold" id="form-gtotal" name="gtotal" value="0.00" readonly>
+									</div>
 								</div>
 							</div>
-
-
-
-
-						
-						
-						
 						</div>
-						
-						
-					
-					
-					
-					
 						<div class="mt-4 text-end">
                             <input type="hidden" name="action"  id="form-action" value="update_po">
 							<input type="hidden" id="form-podet-json" name="podet_json" value="">
@@ -669,7 +661,7 @@
 			document.getElementById('form-podate').value = data.podate;
 			document.getElementById('form-dateline').value = data.poline;
 			//document.getElementById('form-stts').value = data.stts;
-			//document.getElementById('form-total').value = data.total;
+			document.getElementById('form-gtotal').value = data.total;
 			document.getElementById('form-curr').value = data.curr;
 			document.getElementById('form-pormk').value = data.rmk;
 			document.getElementById('form-drow').value = data.drow;
@@ -802,6 +794,8 @@
 			
 			// 6. 渲染最右侧的小计（保留两位小数）
 			currentAmountCell.innerText = finalAmount.toFixed(2);
+			// 计算完当前行后，立即更新总计
+			updateGrandTotal();
 		}
 	}
 
@@ -826,7 +820,26 @@
 				});
 			}
 		}
+		updateGrandTotal();
+	}
+	// 2. 遍历所有行并计算 Grand Total
+	function updateGrandTotal() {
+		let grandTotal = 0;
 		
+		// 抓取页面上所有行的小计单元格
+		const allAmountCells = document.querySelectorAll('.item-amount');
+		
+		allAmountCells.forEach(cell => {
+			// 如果 .item-amount 是 input，用 cell.value；如果是 td/span，用 cell.innerText
+			const amount = parseFloat(cell.innerText || cell.value) || 0;
+			grandTotal += amount;
+		});
+		
+		// 写入 gtotal 输入框并强制保留 2 位小数
+		const gtotalElem = document.getElementById('form-gtotal'); // 如果你的ID是 form-gtotal 请对应修改
+		if (gtotalElem) {
+			gtotalElem.value = grandTotal.toFixed(2);
+		}
 	}
 
 	// 5. ✨ 新增：在表格最下方动态追加新空行的函数
@@ -938,6 +951,7 @@
 		document.getElementById('form-dateline').value = '';
 		document.getElementById('form-pormk').value = '';
 		document.getElementById('form-curr').value = '';
+		document.getElementById('form-gtotal').value =(0).toFixed(2); 
 		
 		// 1. Get the DOM elements of the two input fields
 		const poDateInput = document.getElementById('form-podate');
