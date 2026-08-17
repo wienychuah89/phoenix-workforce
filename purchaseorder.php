@@ -418,7 +418,13 @@
 				
 							<!-- 保持点击事件不变，直接传入 ID 即可 -->
 							<div class="card-body py-1 ps-3" style="cursor: pointer;" onclick="selectPO('<?php echo htmlspecialchars($po['pono']); ?>')">
-								<h6 class="card-title mb-1 text-primary"><?php echo htmlspecialchars($po['pono']); ?></h6>
+								<h6 class="card-title mb-1 text-primary"><?php echo htmlspecialchars($po['pono']); ?></hr>
+			                    <span><img src="./images/print.png" 
+								 alt="Print PO" 
+								 title="Print Purchase Order" 
+								 class="print-icon" 
+								 style="width: 20px; height: auto; cursor: pointer;" 
+								 onclick="printFormalPO('<?php echo htmlspecialchars($po['pono'], ENT_QUOTES, 'UTF-8'); ?>');"></span>&nbsp;&nbsp;
 								<p class="card-text text-muted small mb-0 fw-bold"><?php echo htmlspecialchars($po['suppname']); ?></p>
 								<p class="card-text text-muted small mb-0"><?php echo htmlspecialchars($po['podate'] ?? ''); ?></p>
 							</div>		
@@ -460,11 +466,9 @@
 					    <div class="row g-5">
 							<div class="col-md-2">
 								<label class="form-label fw-bold">PO Number</label>
-								<input type="text" class="form-control bg-light" id="form-pono" name="pono" value="" readonly>
+								<input type="text" class="form-control bg-light" id="form-pono" name="pono" value="" readonly> 
 							</div>
-							
 							<div class="col-md-1">&nbsp;</div>
-						
 							<div class="col-md-4">
 								<label class="form-label fw-bold">PO Deadline <span class="text-danger">[Default 7 days]</span>*</label>
 								<input type="date" class="form-control" id="form-dateline" name="dateline" value="<?php echo $defaultDeadline; ?>">
@@ -1017,6 +1021,21 @@
 			}
 		});
 	});
-	
+	function printFormalPO(passpo) {
+		// Retrieve PO Number from your form input
+
+		const pono = passpo;
+
+		if (!pono) {
+			alert('Please select or enter a valid PO Number first.');
+			return;
+		}
+
+		// Target URL for your server-side PO report generation script
+		const reportUrl = `./print_po.php?pono=${encodeURIComponent(pono)}`;
+
+		// Open in a new tab/window
+		window.open(reportUrl, '_blank');
+	}
 
 </script>
